@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -31,10 +30,6 @@ padding:12px 26px;
 font-weight:800;
 border-radius:999px;
 cursor:pointer;
-}
-.tab-active{
-background:#2563eb;
-color:#fff;
 }
 </style>
 </head>
@@ -84,23 +79,24 @@ Enter Dashboard
 <input type="hidden" id="editingId">
 <input id="appName" required placeholder="App Name" class="border p-3 rounded-xl">
 <input id="appSubtitle" required placeholder="Short Description" class="border p-3 rounded-xl">
-<input id="appRank" type="number" placeholder="Rank" class="border p-3 rounded-xl">
 <select id="appCategory" class="border p-3 rounded-xl">
 <option value="all">All</option>
 <option value="new">New</option>
 </select>
+<input type="file" id="appLogo" accept="image/*" class="border p-3 rounded-xl">
 <input id="appUrl" required placeholder="Download URL" class="border p-3 rounded-xl md:col-span-2">
 <button class="md:col-span-2 bg-blue-600 text-white py-3 rounded-full font-bold">
-Save App
+⭐ Save as #1 App
 </button>
 </form>
+<p class="text-sm text-gray-600 mt-2">✨ <strong>Auto-ranking:</strong> Naya app hamesha #1 par aayega, baaki apps automatic rearrange ho jayenge!</p>
 </div>
 
 <div class="glass p-6">
-<h2 class="text-xl font-bold mb-4">📋 All Apps</h2>
+<h2 class="text-xl font-bold mb-4">📋 All Apps (Auto-ranked)</h2>
 <table class="w-full border text-sm">
 <thead class="bg-blue-100">
-<tr><th>#</th><th>Name</th><th>Rank</th><th>Action</th></tr>
+<tr><th>#</th><th>Name</th><th>Logo</th><th>Category</th><th>Action</th></tr>
 </thead>
 <tbody id="appsTable"></tbody>
 </table>
@@ -179,33 +175,53 @@ const blogsRef = ref(db,"blogs");
 
 let apps=[], blogs=[];
 
-/* LOAD APPS */
+/* LOAD APPS - AUTOMATIC SORTING BY CREATION TIME (NEWEST FIRST) */
 onValue(appsRef,s=>{
 apps = Object.entries(s.val()||{}).map(([id,v])=>({id,...v}));
+apps.sort((a,b)=> new Date(b.timestamp||0) - new Date(a.timestamp||0)); // Newest first
+
 statApps.textContent = apps.length;
 statNewApps.textContent = apps.filter(a=>a.category==="new").length;
 
 appsTable.innerHTML = apps.map((a,i)=>`
 <tr>
-<td>${i+1}</td>
+<td class="font-bold text-orange-600">#${i+1}</td>
 <td>${a.name}</td>
-<td>${a.rank||"-"}</td>
+<td>${a.logo ? `<img src="${a.logo}" class="w-8 h-8 object-cover rounded">` : 'No Logo'}</td>
+<td><span class="px-2 py-1 rounded-full text-xs ${a.category==='new'?'bg-green-200 text-green-800':'bg-gray-200'}">${a.category}</span></td>
 <td>
-<button onclick="editApp('${a.id}')" class="text-blue-600">Edit</button>
-<button onclick="deleteApp('${a.id}')" class="text-red-600 ml-2">Delete</button>
+<button onclick="editApp('${a.id}')" class="text-blue-600 hover:underline">Edit</button>
+<button onclick="deleteApp('${a.id}')" class="text-red-600 ml-2 hover:underline">Delete</button>
 </td>
 </tr>`).join("");
 });
 
-/* SAVE APP */
+/* SAVE APP - AUTOMATIC #1 POSITION */
 window.saveApp = async e=>{
 e.preventDefault();
+const logoFile = appLogo.files[0];
+let logoUrl = apps.find(a=>a.id===editingId.value)?.logo || '';
+
+if(logoFile){
+const reader = new FileReader();
+reader.onload = async (e) => {
+logoUrl = e.target.result;
+await saveAppData(logoUrl);
+};
+reader.readAsDataURL(logoFile);
+} else {
+await saveAppData(logoUrl);
+}
+};
+
+async function saveAppData(logoUrl) {
 const data={
 name:appName.value,
 subtitle:appSubtitle.value,
-rank:Number(appRank.value)||999,
 category:appCategory.value,
-url:appUrl.value
+url:appUrl.value,
+logo:logoUrl,
+timestamp: new Date().toISOString() // Ye automatic ranking ke liye
 };
 if(editingId.value){
 await update(ref(db,"apps/"+editingId.value),data);
@@ -213,8 +229,9 @@ await update(ref(db,"apps/"+editingId.value),data);
 await push(appsRef,data);
 }
 editingId.value="";
-e.target.reset();
-};
+document.querySelector('form[onsubmit="saveApp(event)"]').reset();
+appLogo.value='';
+}
 
 /* EDIT APP */
 window.editApp = id=>{
@@ -222,14 +239,13 @@ const a=apps.find(x=>x.id===id);
 editingId.value=a.id;
 appName.value=a.name;
 appSubtitle.value=a.subtitle;
-appRank.value=a.rank;
 appCategory.value=a.category;
 appUrl.value=a.url;
 };
 
 /* DELETE */
-window.deleteApp=id=>remove(ref(db,"apps/"+id));
-window.deleteBlog=id=>remove(ref(db,"blogs/"+id));
+window.deleteApp=id=>confirm('Delete this app?') && remove(ref(db,"apps/"+id));
+window.deleteBlog=id=>confirm('Delete this blog?') && remove(ref(db,"blogs/"+id));
 
 /* BLOGS */
 onValue(blogsRef,s=>{
@@ -243,7 +259,7 @@ blogsTable.innerHTML=blogs.map(b=>`
 <td>${b.category||"-"}</td>
 <td>${b.featured?"⭐":""}</td>
 <td>
-<button onclick="deleteBlog('${b.id}')" class="text-red-600">Delete</button>
+<button onclick="deleteBlog('${b.id}')" class="text-red-600 hover:underline">Delete</button>
 </td>
 </tr>`).join("");
 });
