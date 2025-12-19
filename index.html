@@ -77,9 +77,10 @@ Enter Dashboard
 <section id="appsTab" class="max-w-6xl mx-auto p-6">
 
 <div class="glass p-6 mb-8">
-<h2 class="text-xl font-bold mb-4">➕ Add App</h2>
+<h2 class="text-xl font-bold mb-4">➕ Add / Edit App</h2>
 
 <form onsubmit="saveApp(event)" class="grid gap-4 md:grid-cols-2">
+<input type="hidden" id="editingId">
 <input id="appName" required placeholder="App Name" class="border p-3 rounded-xl">
 <input id="appSubtitle" required placeholder="Short Description" class="border p-3 rounded-xl">
 <input id="appRank" type="number" placeholder="Rank" class="border p-3 rounded-xl">
@@ -110,9 +111,10 @@ Save App
 <section id="blogsTab" class="max-w-6xl mx-auto p-6 hidden">
 
 <div class="glass p-6 mb-8">
-<h2 class="text-xl font-bold mb-4">📝 Add Blog</h2>
+<h2 class="text-xl font-bold mb-4">📝 Add / Edit Blog</h2>
 
 <form onsubmit="saveBlog(event)" class="grid gap-4">
+<input type="hidden" id="blogId">
 <input id="blogTitle" required placeholder="Blog Title" class="border p-3 rounded-xl">
 <input id="blogSlug" required placeholder="Slug (unique)" class="border p-3 rounded-xl">
 <input id="blogCategory" placeholder="Category" class="border p-3 rounded-xl">
@@ -141,6 +143,7 @@ Publish Blog
 
 </div>
 
+<!-- BASIC JS -->
 <script>
 const ADMIN_PASS="775993";
 function checkPassword(){
@@ -157,9 +160,10 @@ btn.classList.add("tab-active");
 }
 </script>
 
+<!-- FIREBASE -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
-import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
+import { getDatabase, ref, push, onValue, update, remove } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
 
 const app=initializeApp({
 apiKey:"AIzaSyBwC35sh20ttnUeNsMOi8ghzsab-Db_6c4",
@@ -170,60 +174,106 @@ const db=getDatabase(app);
 const appsRef=ref(db,"apps");
 const blogsRef=ref(db,"blogs");
 
+let apps=[], blogs=[];
+
 /* LOAD APPS */
 onValue(appsRef,s=>{
-const apps=Object.entries(s.val()||{}).map(([id,v])=>({id,...v}));
+apps=Object.entries(s.val()||{}).map(([id,v])=>({id,...v}));
 statApps.textContent=apps.length;
 statNewApps.textContent=apps.filter(a=>a.category==="new").length;
+
 appsTable.innerHTML=apps.map((a,i)=>`
 <tr>
 <td>${i+1}</td>
 <td>${a.name}</td>
 <td>${a.rank||"-"}</td>
-<td><button onclick="deleteApp('${a.id}')" class="text-red-600">Delete</button></td>
+<td>
+<button onclick="editApp('${a.id}')" class="text-blue-600">Edit</button>
+<button onclick="deleteApp('${a.id}')" class="text-red-600 ml-2">Delete</button>
+</td>
 </tr>`).join("");
 });
 
 /* LOAD BLOGS */
 onValue(blogsRef,s=>{
-const blogs=Object.entries(s.val()||{}).map(([id,v])=>({id,...v}));
+blogs=Object.entries(s.val()||{}).map(([id,v])=>({id,...v}));
 statBlogs.textContent=blogs.length;
 statFeatured.textContent=blogs.filter(b=>b.featured).length;
+
 blogsTable.innerHTML=blogs.map(b=>`
 <tr>
 <td>${b.title}</td>
 <td>${b.category||"-"}</td>
 <td>${b.featured?"⭐":""}</td>
-<td><button onclick="deleteBlog('${b.id}')" class="text-red-600">Delete</button></td>
+<td>
+<button onclick="editBlog('${b.id}')" class="text-blue-600">Edit</button>
+<button onclick="deleteBlog('${b.id}')" class="text-red-600 ml-2">Delete</button>
+</td>
 </tr>`).join("");
 });
 
-/* SAVE */
-window.saveApp=e=>{
+/* SAVE / UPDATE APP */
+window.saveApp = async e => {
 e.preventDefault();
-push(appsRef,{
+const data={
 name:appName.value,
 subtitle:appSubtitle.value,
 rank:Number(appRank.value)||999,
 category:appCategory.value,
 url:appUrl.value
-});
+};
+if(editingId.value){
+await update(ref(db,"apps/"+editingId.value),data);
+}else{
+await push(appsRef,data);
+}
+editingId.value="";
 e.target.reset();
 };
 
-window.saveBlog=e=>{
+/* EDIT APP */
+window.editApp=id=>{
+const a=apps.find(x=>x.id===id);
+editingId.value=a.id;
+appName.value=a.name;
+appSubtitle.value=a.subtitle;
+appRank.value=a.rank;
+appCategory.value=a.category;
+appUrl.value=a.url;
+};
+
+/* SAVE / UPDATE BLOG */
+window.saveBlog = async e => {
 e.preventDefault();
-push(blogsRef,{
+const data={
 title:blogTitle.value,
 slug:blogSlug.value,
 category:blogCategory.value,
 content:blogContent.value,
 featured:blogFeatured.checked,
 date:new Date().toISOString()
-});
+};
+if(blogId.value){
+await update(ref(db,"blogs/"+blogId.value),data);
+}else{
+await push(blogsRef,data);
+}
+blogId.value="";
 e.target.reset();
 };
 
+/* EDIT BLOG */
+window.editBlog=id=>{
+const b=blogs.find(x=>x.id===id);
+blogId.value=b.id;
+blogTitle.value=b.title;
+blogSlug.value=b.slug;
+blogCategory.value=b.category;
+blogContent.value=b.content;
+blogFeatured.checked=b.featured;
+};
+
+/* DELETE */
 window.deleteApp=id=>remove(ref(db,"apps/"+id));
 window.deleteBlog=id=>remove(ref(db,"blogs/"+id));
 </script>
