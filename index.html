@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,250 +8,277 @@
 <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 
 <style>
-/* ===== PREMIUM BACKGROUND ===== */
 body{
-  min-height:100vh;
-  background:
-    radial-gradient(circle at 20% 20%, rgba(255,255,255,0.25), transparent 40%),
-    radial-gradient(circle at 80% 30%, rgba(255,255,255,0.2), transparent 40%),
-    linear-gradient(-45deg,#ff6b35,#ff9f1c,#ffd166,#ff6b35);
-  background-size:400% 400%;
-  animation:bgMove 18s ease infinite;
-  font-family:Segoe UI,Tahoma,sans-serif;
+min-height:100vh;
+background:linear-gradient(-45deg,#ff6b35,#ff9f1c,#ffd166,#ff6b35);
+background-size:400% 400%;
+animation:bgMove 18s ease infinite;
+font-family:Segoe UI,Tahoma,sans-serif;
 }
 @keyframes bgMove{
-  0%{background-position:0% 50%}
-  50%{background-position:100% 50%}
-  100%{background-position:0% 50%}
+0%{background-position:0% 50%}
+50%{background-position:100% 50%}
+100%{background-position:0% 50%}
 }
-
-/* ===== GLASS CARD ===== */
 .glass{
-  background:rgba(255,255,255,0.88);
-  backdrop-filter:blur(18px);
-  border-radius:22px;
-  box-shadow:0 25px 60px rgba(0,0,0,0.18);
-  transition:0.35s ease;
+background:rgba(255,255,255,.92);
+backdrop-filter:blur(18px);
+border-radius:22px;
+box-shadow:0 25px 60px rgba(0,0,0,.18);
 }
-.glass:hover{
-  transform:translateY(-6px);
-  box-shadow:0 35px 80px rgba(0,0,0,0.28);
+.tab-btn{
+padding:12px 26px;
+font-weight:800;
+border-radius:999px;
+cursor:pointer;
+}
+.tab-active{
+background:#2563eb;
+color:#fff;
 }
 </style>
 </head>
 
 <body>
 
-<!-- ================= PASSWORD SCREEN ================= -->
+<!-- LOGIN -->
 <div id="lockScreen" class="min-h-screen flex items-center justify-center">
-  <div class="glass p-8 w-full max-w-sm text-center">
-    <h2 class="text-2xl font-extrabold mb-4">🔐 Admin Access</h2>
-    <p class="text-gray-600 mb-4">Enter admin password to continue</p>
-
-    <input id="adminPassword" type="password" placeholder="Enter Password"
-      class="w-full border p-3 rounded-xl mb-4 text-center">
-
-    <button onclick="checkPassword()"
-      class="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-full font-bold">
-      Enter Dashboard
-    </button>
-  </div>
+<div class="glass p-8 w-full max-w-sm text-center">
+<h2 class="text-2xl font-extrabold mb-4">🔐 Admin Access</h2>
+<input id="adminPassword" type="password" placeholder="Password"
+class="w-full border p-3 rounded-xl mb-4 text-center">
+<button onclick="checkPassword()"
+class="w-full bg-orange-500 text-white py-3 rounded-full font-bold">
+Enter Dashboard
+</button>
+</div>
 </div>
 
-<!-- ================= ADMIN DASHBOARD ================= -->
-<div id="adminPanel" style="display:none;">
+<div id="adminPanel" style="display:none">
 
-<!-- HEADER -->
-<header class="px-6 py-4 text-white"
-style="background:linear-gradient(135deg,#ff6b35,#ff9f1c);
-box-shadow:0 8px 30px rgba(0,0,0,.25)">
-  <h1 class="text-xl font-extrabold tracking-wide">
-    🚀 TechWithTips Admin Dashboard
-  </h1>
+<header class="px-6 py-4 text-white bg-orange-500">
+<h1 class="text-xl font-extrabold">🚀 TechWithTips Admin Dashboard</h1>
 </header>
 
 <!-- STATS -->
-<section class="grid grid-cols-1 md:grid-cols-3 gap-6 p-6 max-w-6xl mx-auto">
-
-  <div class="glass p-6">
-    <p class="text-gray-500 text-sm">Total Apps</p>
-    <p id="totalApps" class="text-4xl font-extrabold text-orange-500">0</p>
-  </div>
-
-  <div class="glass p-6">
-    <p class="text-gray-500 text-sm">New Apps</p>
-    <p id="newApps" class="text-4xl font-extrabold text-blue-500">0</p>
-  </div>
-
-  <div class="glass p-6">
-    <p class="text-gray-500 text-sm">Admin Status</p>
-    <p class="text-2xl font-bold text-green-600">Unlocked 🔓</p>
-  </div>
-
+<section class="grid grid-cols-2 md:grid-cols-4 gap-6 p-6 max-w-6xl mx-auto">
+<div class="glass p-6"><p>Total Apps</p><p id="statApps" class="text-3xl font-bold">0</p></div>
+<div class="glass p-6"><p>Total Blogs</p><p id="statBlogs" class="text-3xl font-bold">0</p></div>
+<div class="glass p-6"><p>Featured Blogs</p><p id="statFeatured" class="text-3xl font-bold">0</p></div>
+<div class="glass p-6"><p>New Apps</p><p id="statNewApps" class="text-3xl font-bold">0</p></div>
 </section>
 
-<!-- FORM -->
-<section class="glass max-w-4xl mx-auto p-6">
-<h2 class="text-2xl font-bold mb-4 text-center">➕ Add / Edit App</h2>
+<!-- TABS -->
+<div class="flex justify-center gap-4 mb-6">
+<button class="tab-btn tab-active" onclick="openTab('appsTab',this)">📱 Apps</button>
+<button class="tab-btn" onclick="openTab('blogsTab',this)">📝 Blogs</button>
+</div>
 
+<!-- ================= APPS TAB ================= -->
+<section id="appsTab" class="max-w-6xl mx-auto p-6">
+
+<div class="glass p-6 mb-8">
+<h2 class="text-xl font-bold mb-4">➕ Add / Edit App</h2>
 <form id="appForm" onsubmit="handleAppForm(event)" class="grid gap-4 md:grid-cols-2">
-
 <input type="hidden" id="editingId">
-
 <input id="appName" required placeholder="App Name" class="border p-3 rounded-xl">
 <input id="appSubtitle" required placeholder="Short Description" class="border p-3 rounded-xl">
-
 <input id="appRank" type="number" placeholder="Rank" class="border p-3 rounded-xl">
 <select id="appCategory" class="border p-3 rounded-xl">
-  <option value="all">All Apps</option>
-  <option value="new">New Apps</option>
+<option value="all">All</option>
+<option value="new">New</option>
 </select>
-
-<input id="appUrl" type="url" required placeholder="Download Link"
- class="border p-3 rounded-xl md:col-span-2">
-
-<input id="appLogo" type="file" accept="image/*"
- class="border p-3 rounded-xl md:col-span-2">
-
+<input id="appUrl" required placeholder="Download URL" class="border p-3 rounded-xl md:col-span-2">
+<input id="appLogo" type="file" accept="image/*" class="border p-3 rounded-xl md:col-span-2">
 <input type="hidden" id="existingLogoUrl">
-
-<button id="appFormBtn"
- class="md:col-span-2 bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-full font-bold">
-➕ Add App
+<button class="md:col-span-2 bg-blue-600 text-white py-3 rounded-full font-bold">
+Save App
 </button>
-
 </form>
-</section>
+</div>
 
-<!-- TABLE -->
-<section class="glass max-w-6xl mx-auto mt-10 p-6">
-<h2 class="text-2xl font-bold mb-4">📋 All Apps</h2>
-
-<div class="overflow-x-auto">
-<table class="w-full border text-sm bg-white/80 rounded-xl overflow-hidden">
-<thead class="bg-orange-100">
-<tr>
-  <th class="p-3 border">#</th>
-  <th class="p-3 border">Name</th>
-  <th class="p-3 border">Category</th>
-  <th class="p-3 border">Rank</th>
-  <th class="p-3 border">Actions</th>
-</tr>
+<div class="glass p-6">
+<h2 class="text-xl font-bold mb-4">📋 All Apps</h2>
+<table class="w-full border text-sm">
+<thead class="bg-blue-100">
+<tr><th>#</th><th>Name</th><th>Rank</th><th>Action</th></tr>
 </thead>
 <tbody id="appsTable"></tbody>
 </table>
 </div>
+
+</section>
+
+<!-- ================= BLOGS TAB ================= -->
+<section id="blogsTab" class="max-w-6xl mx-auto p-6 hidden">
+
+<div class="glass p-6 mb-8">
+<h2 class="text-xl font-bold mb-4">📝 Add / Edit Blog</h2>
+
+<form id="blogForm" onsubmit="handleBlogForm(event)" class="grid gap-4">
+<input type="hidden" id="blogId">
+
+<input id="blogTitle" required placeholder="Blog Title" class="border p-3 rounded-xl">
+<input id="blogSlug" required placeholder="Slug (unique)" class="border p-3 rounded-xl">
+<input id="blogCategory" placeholder="Category" class="border p-3 rounded-xl">
+
+<input id="blogHashtags"
+placeholder="Hashtags (example: whatsapp, earning, apps)"
+class="border p-3 rounded-xl">
+
+<label class="flex gap-2 items-center font-semibold">
+<input type="checkbox" id="blogFeatured"> ⭐ Featured Blog
+</label>
+
+<div>
+<p class="font-bold mb-2">Related Apps</p>
+<div id="relatedAppsBox" class="grid grid-cols-2 gap-2"></div>
+</div>
+
+<textarea id="blogContent" rows="6" required
+placeholder="Full Blog Content"
+class="border p-3 rounded-xl"></textarea>
+
+<button class="bg-green-600 text-white py-3 rounded-full font-bold">
+Publish Blog
+</button>
+</form>
+</div>
+
+<div class="glass p-6">
+<h2 class="text-xl font-bold mb-4">📚 All Blogs</h2>
+<input id="blogSearch" placeholder="Search by title, category, hashtag..."
+class="border p-3 rounded-xl mb-4 w-full">
+
+<table class="w-full border text-sm">
+<thead class="bg-green-100">
+<tr><th>Title</th><th>Category</th><th>Featured</th><th>Action</th></tr>
+</thead>
+<tbody id="blogsTable"></tbody>
+</table>
+</div>
+
 </section>
 
 </div>
 
-<!-- ================= PASSWORD SCRIPT ================= -->
+<!-- LOGIN + TABS -->
 <script>
-const ADMIN_PASS = "775993";
-
+const ADMIN_PASS="775993";
 function checkPassword(){
-  const input = document.getElementById("adminPassword").value;
-  if(input === ADMIN_PASS){
-    document.getElementById("lockScreen").style.display="none";
-    document.getElementById("adminPanel").style.display="block";
-  }else{
-    alert("❌ Wrong password");
-  }
+if(adminPassword.value===ADMIN_PASS){
+lockScreen.style.display="none";
+adminPanel.style.display="block";
+}else alert("Wrong Password");
+}
+function openTab(id,btn){
+document.querySelectorAll('[id$="Tab"]').forEach(t=>t.classList.add("hidden"));
+document.getElementById(id).classList.remove("hidden");
+document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove("tab-active"));
+btn.classList.add("tab-active");
 }
 </script>
 
-<!-- ================= FIREBASE ================= -->
+<!-- FIREBASE -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
 import { getDatabase, ref, push, onValue, update, remove } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyBwC35sh20ttnUeNsMOi8ghzsab-Db_6c4",
-  databaseURL: "https://pawan-9dd64-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "pawan-9dd64",
-  appId: "1:261645960158:web:69b39c9ac9e132c1ef134f"
-};
+const app=initializeApp({
+apiKey:"AIzaSyBwC35sh20ttnUeNsMOi8ghzsab-Db_6c4",
+databaseURL:"https://pawan-9dd64-default-rtdb.asia-southeast1.firebasedatabase.app"
+});
+const db=getDatabase(app);
 
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-const appsRef = ref(db,"apps");
-let allApps=[];
+const appsRef=ref(db,"apps");
+const blogsRef=ref(db,"blogs");
 
-onValue(appsRef,snap=>{
-  const d=snap.val()||{};
-  allApps=Object.entries(d).map(([id,v])=>({id,...v}));
-  render();
+let apps=[], blogs=[];
+
+/* LOAD APPS */
+onValue(appsRef,s=>{
+apps=Object.entries(s.val()||{}).map(([id,v])=>({id,...v}));
+statApps.textContent=apps.length;
+statNewApps.textContent=apps.filter(a=>a.category==="new").length;
+
+appsTable.innerHTML=apps.map((a,i)=>`
+<tr>
+<td>${i+1}</td>
+<td>${a.name}</td>
+<td>${a.rank}</td>
+<td>
+<button onclick="deleteApp('${a.id}')" class="text-red-600">Delete</button>
+</td>
+</tr>`).join("");
+
+relatedAppsBox.innerHTML=apps.map(a=>`
+<label class="flex gap-2">
+<input type="checkbox" value="${a.id}"> ${a.name}
+</label>`).join("");
 });
 
-function render(){
-  totalApps.textContent=allApps.length;
-  newApps.textContent=allApps.filter(a=>a.category==="new").length;
+/* LOAD BLOGS */
+onValue(blogsRef,s=>{
+blogs=Object.entries(s.val()||{}).map(([id,v])=>({id,...v}));
+statBlogs.textContent=blogs.length;
+statFeatured.textContent=blogs.filter(b=>b.featured).length;
+renderBlogs(blogs);
+});
 
-  appsTable.innerHTML=allApps.map((a,i)=>`
-<tr class="text-center">
-<td class="border p-3">${i+1}</td>
-<td class="border p-3 font-bold">${a.name}</td>
-<td class="border p-3">${a.category}</td>
-<td class="border p-3">${a.rank}</td>
-<td class="border p-3 space-x-2">
-<button onclick="editApp('${a.id}')" class="bg-blue-500 text-white px-3 py-1 rounded-lg">Edit</button>
-<button onclick="deleteApp('${a.id}')" class="bg-red-500 text-white px-3 py-1 rounded-lg">Delete</button>
+/* BLOG SEARCH */
+blogSearch.oninput=()=>{
+const q=blogSearch.value.toLowerCase();
+renderBlogs(blogs.filter(b=>
+b.title.toLowerCase().includes(q) ||
+(b.category||"").toLowerCase().includes(q) ||
+(b.hashtags||[]).join(" ").includes(q)
+));
+};
+
+function renderBlogs(list){
+blogsTable.innerHTML=list.map(b=>`
+<tr>
+<td>${b.title}</td>
+<td>${b.category||"-"}</td>
+<td>${b.featured?"⭐":""}</td>
+<td>
+<button onclick="deleteBlog('${b.id}')" class="text-red-600">Delete</button>
 </td>
 </tr>`).join("");
 }
 
-async function handleAppForm(e){
-  e.preventDefault();
-  let logoUrl=existingLogoUrl.value;
-  if(appLogo.files[0]){
-    logoUrl=await new Promise(r=>{
-      const fr=new FileReader();
-      fr.onload=()=>r(fr.result);
-      fr.readAsDataURL(appLogo.files[0]);
-    });
-  }
+/* SAVE BLOG */
+window.handleBlogForm=e=>{
+e.preventDefault();
+const related=[...document.querySelectorAll('#relatedAppsBox input:checked')]
+.map(c=>c.value);
 
-  const data={
-    name:appName.value,
-    subtitle:appSubtitle.value,
-    rank:Number(appRank.value)||999,
-    category:appCategory.value,
-    url:appUrl.value,
-    logoUrl
-  };
+const hashtags = blogHashtags.value
+.toLowerCase()
+.replaceAll("#","")
+.split(",")
+.map(t=>t.trim())
+.filter(Boolean);
 
-  if(editingId.value){
-    await update(ref(db,"apps/"+editingId.value),data);
-  }else{
-    await push(appsRef,data);
-  }
+const data={
+title:blogTitle.value,
+slug:blogSlug.value,
+category:blogCategory.value,
+content:blogContent.value,
+featured:blogFeatured.checked,
+relatedApps:related,
+hashtags:hashtags,
+views:0,
+date:new Date().toISOString()
+};
 
-  appForm.reset();
-  editingId.value="";
-  appFormBtn.textContent="➕ Add App";
-}
+push(blogsRef,data);
+blogForm.reset();
+};
 
-function editApp(id){
-  const a=allApps.find(x=>x.id===id);
-  editingId.value=a.id;
-  appName.value=a.name;
-  appSubtitle.value=a.subtitle;
-  appRank.value=a.rank;
-  appCategory.value=a.category;
-  appUrl.value=a.url;
-  existingLogoUrl.value=a.logoUrl||"";
-  appFormBtn.textContent="💾 Update App";
-}
-
-async function deleteApp(id){
-  if(confirm("Delete this app?")){
-    await remove(ref(db,"apps/"+id));
-  }
-}
-
-window.editApp=editApp;
-window.deleteApp=deleteApp;
-window.handleAppForm=handleAppForm;
+/* DELETE */
+window.deleteBlog=id=>remove(ref(db,"blogs/"+id));
+window.deleteApp=id=>remove(ref(db,"apps/"+id));
 </script>
 
 </body>
