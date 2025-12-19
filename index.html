@@ -126,8 +126,8 @@ class="border p-3 rounded-xl"></textarea>
 <label class="flex gap-2 items-center font-semibold">
 <input type="checkbox" id="blogFeatured"> ⭐ Featured
 </label>
-<button class="bg-green-600 text-white py-3 rounded-full font-bold">
-Publish / Update Blog
+<button id="blogSubmitBtn" class="bg-green-600 text-white py-3 rounded-full font-bold">
+Publish Blog
 </button>
 </form>
 </div>
@@ -275,6 +275,7 @@ window.saveBlog = async e=>{
 e.preventDefault();
 const file = blogImage.files[0];
 const editingBlogId = blogId.value;
+const submitBtn = document.getElementById('blogSubmitBtn');
 
 const existing = blogs.find(b => b.id === editingBlogId);
 let oldImage = existing ? (existing.image || "") : "";
@@ -302,6 +303,7 @@ await push(blogsRef, data);
 e.target.reset();
 blogId.value = "";
 blogImage.value = "";
+submitBtn.textContent = "Publish Blog";
 };
 reader.readAsDataURL(file);
 } else {
@@ -313,6 +315,7 @@ await push(blogsRef, data);
 }
 e.target.reset();
 blogId.value = "";
+submitBtn.textContent = "Publish Blog";
 }
 };
 
@@ -322,10 +325,11 @@ const b=blogs.find(x=>x.id===id);
 blogId.value=b.id;
 blogTitle.value=b.title;
 blogSlug.value=b.slug;
-blogCategory.value=b.category;
-blogContent.value=b.content;
+blogCategory.value=b.category||"";
+blogContent.value=b.content||"";
 blogFeatured.checked=!!b.featured;
 blogImage.value="";
+document.getElementById('blogSubmitBtn').textContent = "Update Blog";
 };
 
 /* DELETE BLOG */
