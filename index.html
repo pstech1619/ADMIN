@@ -31,6 +31,11 @@ font-weight:800;
 border-radius:999px;
 cursor:pointer;
 }
+.tab-active{
+background:#2563eb;
+color:#fff;
+}
+.hidden{display:none;}
 </style>
 </head>
 
@@ -108,7 +113,7 @@ Enter Dashboard
 <section id="blogsTab" class="max-w-6xl mx-auto p-6 hidden">
 
 <div class="glass p-6 mb-8">
-<h2 class="text-xl font-bold mb-4">📝 Add Blog</h2>
+<h2 class="text-xl font-bold mb-4">📝 Add / Edit Blog</h2>
 
 <form onsubmit="saveBlog(event)" class="grid gap-4">
 <input type="hidden" id="blogId">
@@ -122,7 +127,7 @@ class="border p-3 rounded-xl"></textarea>
 <input type="checkbox" id="blogFeatured"> ⭐ Featured
 </label>
 <button class="bg-green-600 text-white py-3 rounded-full font-bold">
-Publish Blog
+Publish / Update Blog
 </button>
 </form>
 </div>
@@ -131,7 +136,7 @@ Publish Blog
 <h2 class="text-xl font-bold mb-4">📚 All Blogs</h2>
 <table class="w-full border text-sm">
 <thead class="bg-green-100">
-<tr><th>Title</th><th>Category</th><th>Featured</th><th>Action</th></tr>
+<tr><th>Thumbnail</th><th>Title</th><th>Category</th><th>Featured</th><th>Action</th></tr>
 </thead>
 <tbody id="blogsTable"></tbody>
 </table>
@@ -175,10 +180,10 @@ const blogsRef = ref(db,"blogs");
 
 let apps=[], blogs=[];
 
-/* LOAD APPS - AUTOMATIC SORTING BY CREATION TIME (NEWEST FIRST) */
+/* LOAD APPS */
 onValue(appsRef,s=>{
 apps = Object.entries(s.val()||{}).map(([id,v])=>({id,...v}));
-apps.sort((a,b)=> new Date(b.timestamp||0) - new Date(a.timestamp||0)); // Newest first
+apps.sort((a,b)=> new Date(b.timestamp||0) - new Date(a.timestamp||0));
 
 statApps.textContent = apps.length;
 statNewApps.textContent = apps.filter(a=>a.category==="new").length;
@@ -196,7 +201,7 @@ appsTable.innerHTML = apps.map((a,i)=>`
 </tr>`).join("");
 });
 
-/* SAVE APP - AUTOMATIC #1 POSITION */
+/* SAVE APP */
 window.saveApp = async e=>{
 e.preventDefault();
 const logoFile = appLogo.files[0];
@@ -221,7 +226,7 @@ subtitle:appSubtitle.value,
 category:appCategory.value,
 url:appUrl.value,
 logo:logoUrl,
-timestamp: new Date().toISOString() // Ye automatic ranking ke liye
+timestamp: new Date().toISOString()
 };
 if(editingId.value){
 await update(ref(db,"apps/"+editingId.value),data);
@@ -243,9 +248,8 @@ appCategory.value=a.category;
 appUrl.value=a.url;
 };
 
-/* DELETE */
+/* DELETE APP */
 window.deleteApp=id=>confirm('Delete this app?') && remove(ref(db,"apps/"+id));
-window.deleteBlog=id=>confirm('Delete this blog?') && remove(ref(db,"blogs/"+id));
 
 /* BLOGS */
 onValue(blogsRef,s=>{
@@ -255,27 +259,77 @@ statFeatured.textContent=blogs.filter(b=>b.featured).length;
 
 blogsTable.innerHTML=blogs.map(b=>`
 <tr>
+<td>${b.image ? `<img src="${b.image}" class="w-10 h-10 object-cover rounded">` : 'No Image'}</td>
 <td>${b.title}</td>
 <td>${b.category||"-"}</td>
 <td>${b.featured?"⭐":""}</td>
 <td>
-<button onclick="deleteBlog('${b.id}')" class="text-red-600 hover:underline">Delete</button>
+<button onclick="editBlog('${b.id}')" class="text-blue-600 hover:underline">Edit</button>
+<button onclick="deleteBlog('${b.id}')" class="text-red-600 ml-2 hover:underline">Delete</button>
 </td>
 </tr>`).join("");
 });
 
+/* SAVE BLOG WITH IMAGE + EDIT */
 window.saveBlog = async e=>{
 e.preventDefault();
-await push(blogsRef,{
+const file = blogImage.files[0];
+const editingBlogId = blogId.value;
+
+const existing = blogs.find(b => b.id === editingBlogId);
+let oldImage = existing ? (existing.image || "") : "";
+
+const baseData = {
 title:blogTitle.value,
 slug:blogSlug.value,
 category:blogCategory.value,
 content:blogContent.value,
 featured:blogFeatured.checked,
-date:new Date().toISOString()
-});
-e.target.reset();
+date: existing ? (existing.date || new Date().toISOString()) : new Date().toISOString()
 };
+
+if(file){
+const reader = new FileReader();
+reader.onload = async ev => {
+const imageData = ev.target.result;
+const data = {...baseData, image:imageData};
+
+if(editingBlogId){
+await update(ref(db,"blogs/"+editingBlogId), data);
+}else{
+await push(blogsRef, data);
+}
+e.target.reset();
+blogId.value = "";
+blogImage.value = "";
+};
+reader.readAsDataURL(file);
+} else {
+const data = {...baseData, image: oldImage};
+if(editingBlogId){
+await update(ref(db,"blogs/"+editingBlogId), data);
+}else{
+await push(blogsRef, data);
+}
+e.target.reset();
+blogId.value = "";
+}
+};
+
+/* EDIT BLOG */
+window.editBlog = id=>{
+const b=blogs.find(x=>x.id===id);
+blogId.value=b.id;
+blogTitle.value=b.title;
+blogSlug.value=b.slug;
+blogCategory.value=b.category;
+blogContent.value=b.content;
+blogFeatured.checked=!!b.featured;
+blogImage.value="";
+};
+
+/* DELETE BLOG */
+window.deleteBlog=id=>confirm('Delete this blog?') && remove(ref(db,"blogs/"+id));
 </script>
 
 </body>
