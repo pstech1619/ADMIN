@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -111,14 +112,15 @@ Save App
 <section id="blogsTab" class="max-w-6xl mx-auto p-6 hidden">
 
 <div class="glass p-6 mb-8">
-<h2 class="text-xl font-bold mb-4">📝 Add / Edit Blog</h2>
+<h2 class="text-xl font-bold mb-4">📝 Add Blog</h2>
 
 <form onsubmit="saveBlog(event)" class="grid gap-4">
 <input type="hidden" id="blogId">
 <input id="blogTitle" required placeholder="Blog Title" class="border p-3 rounded-xl">
-<input id="blogSlug" required placeholder="Slug (unique)" class="border p-3 rounded-xl">
+<input id="blogSlug" required placeholder="Slug" class="border p-3 rounded-xl">
 <input id="blogCategory" placeholder="Category" class="border p-3 rounded-xl">
-<textarea id="blogContent" rows="6" required placeholder="Full Blog Content"
+<input type="file" id="blogImage" accept="image/*" class="border p-3 rounded-xl">
+<textarea id="blogContent" rows="6" required placeholder="Blog Content"
 class="border p-3 rounded-xl"></textarea>
 <label class="flex gap-2 items-center font-semibold">
 <input type="checkbox" id="blogFeatured"> ⭐ Featured
@@ -152,6 +154,7 @@ lockScreen.style.display="none";
 adminPanel.style.display="block";
 }else alert("Wrong Password");
 }
+
 function openTab(id,btn){
 document.querySelectorAll('[id$="Tab"]').forEach(t=>t.classList.add("hidden"));
 document.getElementById(id).classList.remove("hidden");
@@ -165,24 +168,24 @@ btn.classList.add("tab-active");
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
 import { getDatabase, ref, push, onValue, update, remove } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-database.js";
 
-const app=initializeApp({
+const app = initializeApp({
 apiKey:"AIzaSyBwC35sh20ttnUeNsMOi8ghzsab-Db_6c4",
 databaseURL:"https://pawan-9dd64-default-rtdb.asia-southeast1.firebasedatabase.app"
 });
-const db=getDatabase(app);
+const db = getDatabase(app);
 
-const appsRef=ref(db,"apps");
-const blogsRef=ref(db,"blogs");
+const appsRef = ref(db,"apps");
+const blogsRef = ref(db,"blogs");
 
 let apps=[], blogs=[];
 
 /* LOAD APPS */
 onValue(appsRef,s=>{
-apps=Object.entries(s.val()||{}).map(([id,v])=>({id,...v}));
-statApps.textContent=apps.length;
-statNewApps.textContent=apps.filter(a=>a.category==="new").length;
+apps = Object.entries(s.val()||{}).map(([id,v])=>({id,...v}));
+statApps.textContent = apps.length;
+statNewApps.textContent = apps.filter(a=>a.category==="new").length;
 
-appsTable.innerHTML=apps.map((a,i)=>`
+appsTable.innerHTML = apps.map((a,i)=>`
 <tr>
 <td>${i+1}</td>
 <td>${a.name}</td>
@@ -194,26 +197,8 @@ appsTable.innerHTML=apps.map((a,i)=>`
 </tr>`).join("");
 });
 
-/* LOAD BLOGS */
-onValue(blogsRef,s=>{
-blogs=Object.entries(s.val()||{}).map(([id,v])=>({id,...v}));
-statBlogs.textContent=blogs.length;
-statFeatured.textContent=blogs.filter(b=>b.featured).length;
-
-blogsTable.innerHTML=blogs.map(b=>`
-<tr>
-<td>${b.title}</td>
-<td>${b.category||"-"}</td>
-<td>${b.featured?"⭐":""}</td>
-<td>
-<button onclick="editBlog('${b.id}')" class="text-blue-600">Edit</button>
-<button onclick="deleteBlog('${b.id}')" class="text-red-600 ml-2">Delete</button>
-</td>
-</tr>`).join("");
-});
-
-/* SAVE / UPDATE APP */
-window.saveApp = async e => {
+/* SAVE APP */
+window.saveApp = async e=>{
 e.preventDefault();
 const data={
 name:appName.value,
@@ -232,7 +217,7 @@ e.target.reset();
 };
 
 /* EDIT APP */
-window.editApp=id=>{
+window.editApp = id=>{
 const a=apps.find(x=>x.id===id);
 editingId.value=a.id;
 appName.value=a.name;
@@ -242,40 +227,39 @@ appCategory.value=a.category;
 appUrl.value=a.url;
 };
 
-/* SAVE / UPDATE BLOG */
-window.saveBlog = async e => {
+/* DELETE */
+window.deleteApp=id=>remove(ref(db,"apps/"+id));
+window.deleteBlog=id=>remove(ref(db,"blogs/"+id));
+
+/* BLOGS */
+onValue(blogsRef,s=>{
+blogs = Object.entries(s.val()||{}).map(([id,v])=>({id,...v}));
+statBlogs.textContent=blogs.length;
+statFeatured.textContent=blogs.filter(b=>b.featured).length;
+
+blogsTable.innerHTML=blogs.map(b=>`
+<tr>
+<td>${b.title}</td>
+<td>${b.category||"-"}</td>
+<td>${b.featured?"⭐":""}</td>
+<td>
+<button onclick="deleteBlog('${b.id}')" class="text-red-600">Delete</button>
+</td>
+</tr>`).join("");
+});
+
+window.saveBlog = async e=>{
 e.preventDefault();
-const data={
+await push(blogsRef,{
 title:blogTitle.value,
 slug:blogSlug.value,
 category:blogCategory.value,
 content:blogContent.value,
 featured:blogFeatured.checked,
 date:new Date().toISOString()
-};
-if(blogId.value){
-await update(ref(db,"blogs/"+blogId.value),data);
-}else{
-await push(blogsRef,data);
-}
-blogId.value="";
+});
 e.target.reset();
 };
-
-/* EDIT BLOG */
-window.editBlog=id=>{
-const b=blogs.find(x=>x.id===id);
-blogId.value=b.id;
-blogTitle.value=b.title;
-blogSlug.value=b.slug;
-blogCategory.value=b.category;
-blogContent.value=b.content;
-blogFeatured.checked=b.featured;
-};
-
-/* DELETE */
-window.deleteApp=id=>remove(ref(db,"apps/"+id));
-window.deleteBlog=id=>remove(ref(db,"blogs/"+id));
 </script>
 
 </body>
